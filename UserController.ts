@@ -16,12 +16,6 @@ interface AdminUser {
   permissions: string[];
 }
 
-interface Follow {
-  id: number;
-  user_1_name?: string;
-  user_2_name?: string;
-}
-
 interface Preferences {
   username: string;
   two_factor_auth_enabled: boolean;
@@ -41,61 +35,83 @@ type ApiResponse = {
 };
 
 type UserWithRole = User | AdminUser;
-
 type FullUserSettings = Preferences | NotificationSettings;
 
 export class UserController {
   async signup(req: Request, res: Response) {
     const { username, email, age, favorite_color } = req.body;
+
     const user: UserWithRole = { username, email, age, favorite_color };
-    const response: ApiResponse = { success: true, data: user, error: '' };
-    res.json(response);
-  }
+    const newUser = db.user.create(user); // returns { username, email, age, favorite_color }
 
-  async getFollowing(req: Request, res: Response) {
-    const username = req.params.username;
-    const following: User | AdminUser[] = [];
-    res.json({ username, following });
-  }
+    const response: ApiResponse = {
+      success: true,
+      data: newUser,
+      error: '',
+    };
 
-  async followUser(req: Request, res: Response) {
-    const username = req.body.username;
-    const targetUsername = req.body.targetUsername;
-    const follow: Follow = { id: 1, user_1_name: username, user_2_name: targetUsername };
-    const response: ApiResponse = { success: true, data: follow, error: '' };
     res.json(response);
   }
 
   async getPreferences(req: Request, res: Response) {
     const username = req.params.username;
-    const prefs: FullUserSettings = { username, two_factor_auth_enabled: false };
-    res.json(prefs);
+
+    const prefs: FullUserSettings = db.preferences.find(username); // returns { username, two_factor_auth_enabled }
+
+    const response: ApiResponse = {
+      success: true,
+      data: prefs,
+      error: '',
+    };
+
+    res.json(response);
   }
 
-  async updatePreferences(req: Request, res: Response) {
+  async updatePreferencesAndNotificationSettings(req: Request, res: Response) {
     const { username } = req.params;
-    const { two_factor_auth_enabled } = req.body;
-    const result: Preferences | NotificationSettings = { success: true, username, two_factor_auth_enabled };
-    res.json(result);
+    const {
+      two_factor_auth_enabled,
+      email_notifications,
+      push_notifications,
+    } = req.body;
+
+    const result: Preferences | NotificationSettings = db.preferences.update({
+      username,
+      two_factor_auth_enabled,
+      email_notifications,
+      push_notifications,
+    }); // returns {username, two_factor_auth_enabled, email_notifications, push_notifications}
+
+    const response: ApiResponse = {
+      success: true,
+      data: result,
+      error: '',
+    };
+
+    res.json(response);
   }
 
   async updateUsername(req: Request, res: Response) {
     const { username } = req.params;
     const newUsername = req.body.newUsername;
-    const user: User | AdminUser = { username: newUsername };
-    res.json({ success: true, oldUsername: username, user });
+
+    const user: User | AdminUser = db.user.update({
+      username, 
+      newUsername,
+    }); // returns {username}
+
+    res.json({
+      success: true,
+      user,
+    } as ApiResponse);
   }
 
   async deleteUser(req: Request, res: Response) {
-    const username: UserRole = req.params.username;
-    res.json({ success: true, deletedUsername: username });
-  }
+    const username: string = req.params.username;
 
-  async promoteUser(req: Request, res: Response) {
-    const { username } = req.params;
-    const existingUser: User = { username: username, email: '' };
-    const adminData = { admin: true, permissions: ['read', 'write'] };
-    const promotedUser: AdminUser = { ...existingUser, ...adminData };
-    res.json(promotedUser);
+    res.json({
+      success: true,
+      deletedUsername: username,
+    } as ApiResponse);
   }
 }
