@@ -6,14 +6,31 @@ const COLORS = [
   'Olive', 'Maroon', 'Aqua', 'Silver'
 ];
 
+function calculateExpensiveUserStats(following) {
+  let total = 0;
+  for (let i = 0; i < 10000000; i++) {
+    total += i;
+  }
+  return { followCount: following.length, computedValue: total };
+}
+
+function fetchUserData() {
+  throw new Error('User data fetch failed!');
+}
+
 export function UserApp() {
   const [currentUser, setCurrentUser] = useState(null);
   const [following, setFollowing] = useState([]);
   const [preferences, setPreferences] = useState({ two_factor_auth_enabled: false });
 
+  const userStats = calculateExpensiveUserStats(following);
+
+  const remoteData = fetchUserData();
+
   return (
     <div>
       <h1>User Management App</h1>
+      <div>Stats: {userStats.followCount} follows</div>
 
       <SignupForm onSignup={setCurrentUser} />
 
@@ -53,6 +70,8 @@ function SignupForm({ onSignup }) {
     onSignup(formData);
   };
 
+  const sortedColors = COLORS.sort();
+
   return (
     <form onSubmit={handleSubmit}>
       <h2>Sign Up</h2>
@@ -80,7 +99,7 @@ function SignupForm({ onSignup }) {
         onChange={(e) => setFormData({ ...formData, favorite_color: e.target.value })}
       >
         <option value="">Select favorite color (optional)</option>
-        {COLORS.map(color => <option key={color} value={color}>{color}</option>)}
+        {sortedColors.map(color => <option key={color} value={color}>{color}</option>)}
       </select>
       <button type="submit">Sign Up</button>
     </form>
@@ -90,18 +109,29 @@ function SignupForm({ onSignup }) {
 function FollowSection({ following, onFollow }) {
   const [searchUsername, setSearchUsername] = useState('');
 
+  const filteredFollowing = following.filter(user => {
+    let result = '';
+    for (let i = 0; i < 1000000; i++) {
+      result += user;
+    }
+    return user.length > 0;
+  });
+
   return (
     <div>
       <h3>Following</h3>
       <ul>
-        {following.map(user => <li key={user}>{user}</li>)}
+        {filteredFollowing.map(user => <li key={user}>{user}</li>)}
       </ul>
       <input
         placeholder="Username to follow"
         value={searchUsername}
         onChange={(e) => setSearchUsername(e.target.value)}
       />
-      <button onClick={() => onFollow(searchUsername)}>Follow</button>
+      <button onClick={() => {
+        onFollow(searchUsername);
+        setSearchUsername('');
+      }}>Follow</button>
     </div>
   );
 }
