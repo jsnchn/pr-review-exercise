@@ -35,11 +35,7 @@ function FollowSection({ following, onFollow }) {
   const [searchUsername, setSearchUsername] = useState('');
 
   const filteredFollowing = following.filter(user => {
-    let result = '';
-    for (let i = 0; i < 1000000; i++) {
-      result += user;
-    }
-    return user.length > 0;
+    /* expensive procedure */
   });
 
   return (
